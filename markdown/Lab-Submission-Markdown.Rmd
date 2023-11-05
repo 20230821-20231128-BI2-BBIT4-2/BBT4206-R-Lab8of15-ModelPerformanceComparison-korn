@@ -1,0 +1,185 @@
+---
+title: "Business Intelligence Project"
+author: "korn"
+date: "5/11/23"
+output:
+  github_document: 
+    toc: yes
+    toc_depth: 4
+    fig_width: 6
+    fig_height: 4
+    df_print: default
+editor_options:
+  chunk_output_type: console
+  markdown: 
+    wrap: 72
+---
+
+# Student Details
+
++--------------------------------+---------------------------+
+| **Student ID Numbers and Names | 1.  134644 - C -          |
+| of Group Members**             |     Sebastian Muramara    |
+|                                |                           |
+|                                | 2.  136675 - C - Bernard  |
+|                                |     Otieno                |
+|                                |                           |
+|                                | 3.  131589 - C - Agnes    |
+|                                |     Anyango               |
+|                                |                           |
+|                                | 4.  131582 - C - Njeri    |
+|                                |     Njuguna               |
+|                                |                           |
+|                                | 5.  136009 - C- Sera      |
+|                                |     Ndabari               |
++--------------------------------+---------------------------+
+| **GitHub Classroom Group       | Korn                      |
+| Name**                         |                           |
++--------------------------------+---------------------------+
+| **Course Code**                | BBT4206                   |
++--------------------------------+---------------------------+
+| **Course Name**                | Business Intelligence II  |
++--------------------------------+---------------------------+
+| **Program**                    | Bachelor of Business      |
+|                                | Information Technology    |
++--------------------------------+---------------------------+
+| **Semester Duration**          | 21^st^ August 2023 to     |
+|                                | 28^th^ November 2023      |
++--------------------------------+---------------------------+
+
+# Setup Chunk
+
+**Note:** the following KnitR options have been set as the global
+defaults: <BR>
+`knitr::opts_chunk$set(echo = TRUE, warning = FALSE, eval = TRUE, collapse = FALSE, tidy = TRUE)`.
+
+More KnitR options are documented here
+<https://bookdown.org/yihui/rmarkdown-cookbook/chunk-options.html> and
+here <https://yihui.org/knitr/options/>.
+
+```{r setup, include=FALSE}
+library(formatR)
+knitr::opts_chunk$set(
+  warning = FALSE,
+  collapse = FALSE
+)
+
+```
+#  Lab 8.: Model Performance Comparison
+
+## STEP 1. Install and Load the Required Packages
+```{r STEP 1}
+## mlbench ----
+if (require("mlbench")) {
+  require("mlbench")
+} else {
+  install.packages("mlbench", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+## caret ----
+if (require("caret")) {
+  require("caret")
+} else {
+  install.packages("caret", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+## kernlab ----
+if (require("kernlab")) {
+  require("kernlab")
+} else {
+  install.packages("kernlab", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+## randomForest ----
+if (require("randomForest")) {
+  require("randomForest")
+} else {
+  install.packages("randomForest", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+```
+
+## STEP 2. Load the Dataset
+```{r  STEP 2}
+data(Glass)
+
+```
+## STEP 3. The Resamples Function
+```{r}
+
+train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+### LDA ----
+set.seed(7)
+diabetes_model_lda <- train(Type ~ ., data = Glass,
+                            method = "lda", trControl = train_control)
+
+### CART ----
+set.seed(7)
+diabetes_model_cart <- train(Type ~ ., data = Glass,
+                             method = "rpart", trControl = train_control)
+
+### KNN ----
+set.seed(7)
+diabetes_model_knn <- train(Type ~ ., data = Glass,
+                            method = "knn", trControl = train_control)
+
+### SVM ----
+set.seed(7)
+diabetes_model_svm <- train(Type ~ ., data = Glass,
+                            method = "svmRadial", trControl = train_control)
+
+### Random Forest ----
+set.seed(7)
+diabetes_model_rf <- train(Type ~ ., data = Glass,
+                           method = "rf", trControl = train_control)
+
+```
+### 3.b. Call the `resamples` Function ----
+```{r 3b}
+results <- resamples(list(LDA = diabetes_model_lda, CART = diabetes_model_cart,
+                          KNN = diabetes_model_knn, SVM = diabetes_model_svm,
+                          RF = diabetes_model_rf))
+
+```
+
+## STEP 4. Display the Results
+```{r  STEP 4}
+## 1. Table Summary ----
+summary(results)
+
+## 2. Box and Whisker Plot ----
+
+scales <- list(x = list(relation = "free"), y = list(relation = "free"))
+bwplot(results, scales = scales)
+
+## 3. Dot Plots ----
+
+scales <- list(x = list(relation = "free"), y = list(relation = "free"))
+dotplot(results, scales = scales)
+
+## 4. Scatter Plot Matrix ----
+splom(results)
+
+
+
+# xyplot plots to compare models
+xyplot(results, models = c("LDA", "CART"))
+
+# or
+# xyplot plots to compare models
+xyplot(results, models = c("SVM", "LDA"))
+
+
+## 6. Statistical Significance Tests ----
+
+diffs <- diff(results)
+
+summary(diffs)
+
+
+```
+
